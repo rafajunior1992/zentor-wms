@@ -6,6 +6,7 @@ import { marketplaceWhereClause } from "./marketplace-filter.js";
 import {
   activePickingDurationMs,
   activePackingDurationMs,
+  activeDispatchDurationMs,
   msToSeconds,
 } from "./operation-duration.js";
 import type { ReportColumn, ReportResult } from "./report-types.js";
@@ -24,6 +25,7 @@ export interface OrderTimelineMetrics {
   issueLabel: string | null;
   correctionPickingSec: number | null;
   packingFinalSec: number | null;
+  dispatchSec: number | null;
   totalSec: number;
   pickerName: string | null;
 }
@@ -60,10 +62,21 @@ const PACK_EVENTS = new Set<OrderTimeLogEvent>([
   OrderTimeLogEvent.PACK_CANCEL,
 ]);
 
+const DISPATCH_EVENTS = new Set<OrderTimeLogEvent>([
+  OrderTimeLogEvent.DISPATCH_START,
+  OrderTimeLogEvent.DISPATCH_END,
+]);
+
 function packingActiveSec(logs: TimeLog[]): number {
   const packLogs = logs.filter((l) => PACK_EVENTS.has(l.event));
   if (packLogs.length === 0) return 0;
   return msToSeconds(activePackingDurationMs(packLogs));
+}
+
+function dispatchActiveSec(logs: TimeLog[]): number {
+  const dispatchLogs = logs.filter((l) => DISPATCH_EVENTS.has(l.event));
+  if (dispatchLogs.length === 0) return 0;
+  return msToSeconds(activeDispatchDurationMs(dispatchLogs));
 }
 
 function wallPackingUntilIssueSec(logs: TimeLog[]): number | null {
@@ -98,8 +111,9 @@ export function buildOrderTimelineMetrics(logs: TimeLog[]): OrderTimelineMetrics
 
     const pickingSec = pickingActiveSec(beforePack);
     const packingFinalSec = packingActiveSec(packLogs) || null;
+    const dispatchSec = dispatchActiveSec(sorted) || null;
     const totalSec =
-      pickingSec + (packingFinalSec ?? 0);
+      pickingSec + (packingFinalSec ?? 0) + (dispatchSec ?? 0);
 
     return {
       pickingSec,
@@ -107,6 +121,7 @@ export function buildOrderTimelineMetrics(logs: TimeLog[]): OrderTimelineMetrics
       issueLabel: null,
       correctionPickingSec: null,
       packingFinalSec,
+      dispatchSec,
       totalSec,
       pickerName: firstPickerName(sorted),
     };
@@ -139,11 +154,13 @@ export function buildOrderTimelineMetrics(logs: TimeLog[]): OrderTimelineMetrics
   const correctionPickingSec =
     pickingActiveSec(correctionLogs) || null;
   const packingFinalSec = packingActiveSec(finalPackLogs) || null;
+  const dispatchSec = dispatchActiveSec(sorted) || null;
   const totalSec =
     pickingSec +
     (packingWrongSec ?? 0) +
     (correctionPickingSec ?? 0) +
-    (packingFinalSec ?? 0);
+    (packingFinalSec ?? 0) +
+    (dispatchSec ?? 0);
 
   return {
     pickingSec,
@@ -151,6 +168,7 @@ export function buildOrderTimelineMetrics(logs: TimeLog[]): OrderTimelineMetrics
     issueLabel: parseIssueLabel(issueLog.reason),
     correctionPickingSec,
     packingFinalSec,
+    dispatchSec,
     totalSec,
     pickerName: firstPickerName(sorted),
   };
@@ -165,6 +183,7 @@ const TIMELINE_COLUMNS: ReportColumn[] = [
   { key: "motivoErro", header: "Motivo do erro" },
   { key: "correcaoSeg", header: "Correção / re-separação (s)" },
   { key: "embalagemFinalSeg", header: "Embalagem final (s)" },
+  { key: "expedicaoSeg", header: "Expedição (s)" },
   { key: "totalSeg", header: "Total (s)" },
   { key: "ultimaAtividade", header: "Última atividade" },
 ];
@@ -220,6 +239,7 @@ export async function buildOrderOperationTimelineReport(
       motivoErro: metrics.issueLabel,
       correcaoSeg: metrics.correctionPickingSec,
       embalagemFinalSeg: metrics.packingFinalSec,
+      expedicaoSeg: metrics.dispatchSec,
       totalSeg: metrics.totalSec,
       ultimaAtividade: fmtDateBr(lastLog.createdAt),
     });

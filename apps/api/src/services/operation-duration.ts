@@ -13,6 +13,8 @@ const PACK_PAUSE = new Set<string>([
   OrderTimeLogEvent.PACK_END,
   OrderTimeLogEvent.PACK_CANCEL,
 ]);
+const DISPATCH_ACTIVE = new Set<string>([OrderTimeLogEvent.DISPATCH_START]);
+const DISPATCH_PAUSE = new Set<string>([OrderTimeLogEvent.DISPATCH_END]);
 
 function durationFromLogs(
   logs: { event: string; createdAt: Date }[],
@@ -34,6 +36,10 @@ function durationFromLogs(
     }
   }
 
+  if (segmentStart !== null && activeEvents.has(OrderTimeLogEvent.DISPATCH_START)) {
+    totalMs += Date.now() - segmentStart.getTime();
+  }
+
   return totalMs;
 }
 
@@ -49,6 +55,13 @@ export function activePackingDurationMs(
   logs: { event: string; createdAt: Date }[],
 ): number {
   return durationFromLogs(logs, PACK_ACTIVE, PACK_PAUSE);
+}
+
+/** Duração de expedição (DISPATCH_START → DISPATCH_END), incluindo em andamento. */
+export function activeDispatchDurationMs(
+  logs: { event: string; createdAt: Date }[],
+): number {
+  return durationFromLogs(logs, DISPATCH_ACTIVE, DISPATCH_PAUSE);
 }
 
 export function formatDuration(seconds: number): string {

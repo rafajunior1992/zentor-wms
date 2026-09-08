@@ -99,7 +99,7 @@ export default function BasketScanScreen() {
     <ScreenShell
       scroll
       title={session?.order.erpOrderId ?? "Separar pedido"}
-      subtitle="Vincule uma cesta física ao pedido para iniciar o cronômetro"
+      subtitle="Vincule uma cesta física ao pedido (cronômetro já iniciou no aceite)"
     >
       {isLoading ? (
         <ActivityIndicator size="large" color={theme.primary} />

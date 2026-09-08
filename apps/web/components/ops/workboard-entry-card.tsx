@@ -107,6 +107,33 @@ function KindBadge({ kind }: { kind: "order" | "wave" }) {
   );
 }
 
+function formatElapsed(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  const r = sec % 60;
+  if (m < 60) return r > 0 ? `${m}m ${r}s` : `${m}m`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return rm > 0 ? `${h}h ${rm}m` : `${h}h`;
+}
+
+function DispatchElapsedBadge({ since }: { since: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const sec = Math.max(
+    0,
+    Math.floor((now - new Date(since).getTime()) / 1000),
+  );
+  return (
+    <span className="rounded-md bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-900">
+      Expedição {formatElapsed(sec)}
+    </span>
+  );
+}
+
 function OrderCardHeader({ order }: { order: BoardOrderEntry }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -142,6 +169,9 @@ function OrderCardHeader({ order }: { order: BoardOrderEntry }) {
         <span className="text-sm text-muted-foreground">
           {order.qtyPicked}/{order.qtyOrdered} un.
         </span>
+        {order.status === "DISPATCHING" ? (
+          <DispatchElapsedBadge since={order.updatedAt} />
+        ) : null}
       </div>
     </div>
   );
@@ -156,7 +186,7 @@ function OrderIssueBanner({
 }) {
   const title =
     detail?.source === "PACKING"
-      ? "Motivo do retorno (packing)"
+      ? "Motivo do retorno (separação)"
       : detail?.source === "PAUSE"
         ? "Motivo do problema (separação)"
         : "Motivo reportado";

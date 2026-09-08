@@ -264,7 +264,7 @@ export const OrderStatusLabel: Record<OrderStatus, string> = {
   PICKING: "Em separação",
   PAUSED_ISSUE: "Pausado (problema)",
   PICKED_AWAITING_CONFERENCE: "Separado — aguardando conferência",
-  PACKING_RETURNED_TO_PICKING: "Retorno do packing",
+  PACKING_RETURNED_TO_PICKING: "Retorno para separação",
   DISPATCHING: "Em expedição",
   DISPATCHED: "Expedido",
 };

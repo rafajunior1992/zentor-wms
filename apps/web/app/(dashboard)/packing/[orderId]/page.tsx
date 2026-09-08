@@ -7,16 +7,11 @@ import { CollectionDeadlineIndicator } from "@/components/ops/collection-deadlin
 import { MarketplaceBadge } from "@/components/ops/marketplace-badge";
 import { DataState } from "@/components/ops/data-state";
 import { PackingIssueModal } from "@/components/ops/packing-issue-modal";
-import { ShippingLabelPanel } from "@/components/ops/shipping-label-panel";
-import { ProductImageZoom } from "@/components/ops/product-image-zoom";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  ShippingLabelPanel,
+  type ShippingLabelPanelHandle,
+} from "@/components/ops/shipping-label-panel";
+import { ProductImageZoom } from "@/components/ops/product-image-zoom";
 import { apiFetch } from "@/lib/api/client";
 import {
   confirmPackingItem,
@@ -31,7 +26,6 @@ export default function PackingOrderDetailPage() {
 
   const [order, setOrder] = useState<PackingOrder | null>(null);
   const [scanCode, setScanCode] = useState("");
-  const [lineQty, setLineQty] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,6 +33,7 @@ export default function PackingOrderDetailPage() {
   const [issueModalOpen, setIssueModalOpen] = useState(false);
   const packedProgressRef = useRef(false);
   const reportedRef = useRef(false);
+  const labelPanelRef = useRef<ShippingLabelPanelHandle>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,7 +103,11 @@ export default function PackingOrderDetailPage() {
       setScanCode("");
       setMessage("Produto conferido");
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Erro no bip — use o código de barras do produto");
+      setMessage(
+        e instanceof Error
+          ? e.message
+          : "Erro no bip — use o código de barras do produto",
+      );
     } finally {
       setSaving(false);
     }
@@ -116,22 +115,13 @@ export default function PackingOrderDetailPage() {
 
   const handleConfirmLine = async (itemId: string, max: number) => {
     if (!order) return;
-    const qty = Math.min(
-      max,
-      Math.max(1, Math.floor(Number(lineQty[itemId] ?? max))),
-    );
     setSaving(true);
     setMessage(null);
     try {
-      const updated = await confirmPackingItem(order.id, itemId, qty);
+      const updated = await confirmPackingItem(order.id, itemId, max);
       setOrder(updated);
       packedProgressRef.current = updated.items.some((i) => i.quantityPacked > 0);
-      setLineQty((prev) => {
-        const next = { ...prev };
-        delete next[itemId];
-        return next;
-      });
-      setMessage(`${qty} un. conferida(s)`);
+      setMessage(`${max} un. conferida(s)`);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Erro ao confirmar");
     } finally {
@@ -144,13 +134,18 @@ export default function PackingOrderDetailPage() {
     setSaving(true);
     setMessage(null);
     try {
+      await labelPanelRef.current?.ensureAndPrint();
       await apiFetch(`/api/packing/orders/${order.id}/complete`, {
         method: "POST",
         body: "{}",
       });
       router.push("/packing");
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Erro ao finalizar");
+      setMessage(
+        e instanceof Error
+          ? e.message
+          : "Erro ao imprimir/finalizar — verifique QZ Tray e tente novamente",
+      );
     } finally {
       setSaving(false);
     }
@@ -205,67 +200,97 @@ export default function PackingOrderDetailPage() {
               <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm">{message}</p>
             ) : null}
 
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-              <div className="flex min-w-0 flex-1 flex-wrap gap-3">
-                {pickedItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`flex w-full gap-3 rounded-lg border bg-white p-3 shadow-sm sm:w-[min(100%,280px)] ${
-                      item.remaining === 0
-                        ? "border-emerald-300 bg-emerald-50"
-                        : ""
-                    }`}
-                  >
-                    <ProductImageZoom
-                      src={item.product.imageUrl}
-                      alt={item.product.name}
-                      placeholder={item.product.sku}
-                      className="relative aspect-square w-40 shrink-0 overflow-visible"
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
+              <div className="order-2 flex min-w-0 flex-1 flex-col gap-3 xl:order-1">
+                <form
+                  onSubmit={handleScan}
+                  className="flex flex-wrap items-end gap-2 rounded-xl border bg-white p-4 shadow-sm"
+                >
+                  <div className="min-w-[200px] flex-1">
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Bipar produto
+                    </label>
+                    <input
+                      autoFocus
+                      className="w-full rounded-lg border px-3 py-2 font-mono text-sm"
+                      placeholder="Código de barras"
+                      value={scanCode}
+                      onChange={(e) => setScanCode(e.target.value)}
                     />
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <p
-                        className="truncate font-mono text-sm font-bold"
-                        title={item.product.sku}
-                      >
-                        {item.product.sku}
-                      </p>
-                      <p
-                        className="line-clamp-2 text-sm leading-tight"
-                        title={item.product.name}
-                      >
-                        {item.product.name}
-                      </p>
-                      {item.multiGondolaHint ? (
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={saving || !scanCode.trim()}
+                    className="rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    Bipar
+                  </button>
+                </form>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {pickedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-sm sm:flex-row ${
+                        item.remaining === 0
+                          ? "border-emerald-300 bg-emerald-50"
+                          : ""
+                      }`}
+                    >
+                      <ProductImageZoom
+                        src={item.product.imageUrl}
+                        alt={item.product.name}
+                        placeholder={item.product.sku}
+                        className="relative aspect-square w-full shrink-0 overflow-visible sm:w-64"
+                        sizes="256px"
+                      />
+                      <div className="flex min-w-0 flex-1 flex-col">
                         <p
-                          className="mt-1 truncate rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-900"
-                          title={item.multiGondolaHint}
+                          className="truncate font-mono text-base font-bold"
+                          title={item.product.sku}
                         >
-                          {item.multiGondolaHint}
+                          {item.product.sku}
                         </p>
-                      ) : null}
-                      <p className="mt-1 text-sm font-semibold">
-                        Conferido {item.quantityPacked}/{item.quantityPicked}
-                      </p>
-                      {item.remaining > 0 ? (
-                        <div className="mt-auto pt-2">
+                        <p
+                          className="mt-1 line-clamp-3 text-sm leading-snug"
+                          title={item.product.name}
+                        >
+                          {item.product.name}
+                        </p>
+                        {item.multiGondolaHint ? (
+                          <p
+                            className="mt-2 truncate rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-900"
+                            title={item.multiGondolaHint}
+                          >
+                            {item.multiGondolaHint}
+                          </p>
+                        ) : null}
+                        <p className="mt-3 text-base font-semibold">
+                          Conferido {item.quantityPacked}/{item.quantityPicked}
+                        </p>
+                        {item.remaining > 0 ? (
                           <button
                             type="button"
                             disabled={saving}
                             onClick={() =>
                               handleConfirmLine(item.id, item.remaining)
                             }
-                            className="rounded-lg bg-[#0d9488] px-3 py-1 text-sm font-semibold text-white"
+                            className="mt-auto self-start rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white"
                           >
-                            OK
+                            OK · {item.remaining} un.
                           </button>
-                        </div>
-                      ) : null}
+                        ) : (
+                          <p className="mt-auto text-sm font-medium text-emerald-800">
+                            Item completo
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              <div className="flex w-full flex-col gap-3 lg:sticky lg:top-4 lg:w-80 lg:shrink-0">
+              <aside className="order-1 flex w-full flex-col gap-3 xl:order-2 xl:sticky xl:top-4 xl:w-96 xl:shrink-0">
                 <div className="rounded-xl border bg-white p-4 shadow-sm">
                   <p className="font-mono text-2xl font-bold">
                     {order.erpOrderId}
@@ -306,16 +331,25 @@ export default function PackingOrderDetailPage() {
                       <button
                         type="button"
                         disabled={saving}
-                        onClick={handleComplete}
-                        className="mt-1 rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white"
+                        onClick={() => void handleComplete()}
+                        className="mt-1 rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                       >
-                        Finalizar packing
+                        {saving
+                          ? "Imprimindo e finalizando…"
+                          : "Finalizar packing"}
                       </button>
+                    ) : null}
+                    {order.allPacked ? (
+                      <p className="text-[11px] text-muted-foreground">
+                        Ao finalizar, a etiqueta é impressa automaticamente (QZ
+                        Tray).
+                      </p>
                     ) : null}
                   </div>
                 </div>
 
                 <ShippingLabelPanel
+                  ref={labelPanelRef}
                   orderId={order.id}
                   erpOrderId={order.erpOrderId}
                   initialUrl={order.shippingLabel}
@@ -326,90 +360,7 @@ export default function PackingOrderDetailPage() {
                     )
                   }
                 />
-
-                <form
-                  onSubmit={handleScan}
-                  className="flex flex-col gap-2 rounded-xl border bg-white p-3 shadow-sm"
-                >
-                  <input
-                    autoFocus
-                    className="rounded-lg border px-2 py-1.5 text-sm font-mono"
-                    placeholder="Bipar código de barras"
-                    value={scanCode}
-                    onChange={(e) => setScanCode(e.target.value)}
-                  />
-                  <button
-                    type="submit"
-                    disabled={saving || !scanCode.trim()}
-                    className="w-full rounded-lg bg-[#0d9488] px-2 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
-                  >
-                    Bipar
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Conferido</TableHead>
-                    <TableHead>Qtd</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pickedItems.map((item) => (
-                    <TableRow
-                      key={item.id}
-                      className={
-                        item.remaining === 0 ? "bg-emerald-50" : undefined
-                      }
-                    >
-                      <TableCell className="font-mono">{item.product.sku}</TableCell>
-                      <TableCell>{item.product.name}</TableCell>
-                      <TableCell>
-                        {item.quantityPacked}/{item.quantityPicked}
-                      </TableCell>
-                      <TableCell>
-                        {item.remaining > 0 ? (
-                          <input
-                            type="number"
-                            min={1}
-                            max={item.remaining}
-                            className="w-16 rounded border px-2 py-1 text-sm"
-                            value={lineQty[item.id] ?? String(item.remaining)}
-                            onChange={(e) =>
-                              setLineQty((prev) => ({
-                                ...prev,
-                                [item.id]: e.target.value,
-                              }))
-                            }
-                          />
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {item.remaining > 0 ? (
-                          <button
-                            type="button"
-                            disabled={saving}
-                            onClick={() =>
-                              handleConfirmLine(item.id, item.remaining)
-                            }
-                            className="rounded-lg bg-[#0d9488] px-2 py-1 text-xs font-semibold text-white"
-                          >
-                            Confirmar
-                          </button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              </aside>
             </div>
           </>
         ) : null}

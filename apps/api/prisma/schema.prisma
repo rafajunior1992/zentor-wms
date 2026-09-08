@@ -51,6 +51,8 @@ enum OrderTimeLogEvent {
   PACK_END
   PACK_CANCEL
   PACK_REPORT_ISSUE
+  DISPATCH_START
+  DISPATCH_END
 }
 
 /// Status da onda de separação

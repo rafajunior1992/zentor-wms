@@ -3,6 +3,7 @@ import {
   InventoryMovementType,
   LocationType,
   OrderStatus,
+  OrderTimeLogEvent,
   Prisma,
 } from "@prisma/client";
 import { Permission } from "@wms/shared";
@@ -2093,6 +2094,18 @@ export async function webRoutes(app: FastifyInstance) {
           include: {
             basket: { select: { code: true } },
             assignedPicker: { select: { name: true } },
+            timeLogs: {
+              where: {
+                event: {
+                  in: [
+                    OrderTimeLogEvent.DISPATCH_START,
+                    OrderTimeLogEvent.DISPATCH_END,
+                  ],
+                },
+              },
+              orderBy: { createdAt: "asc" },
+              select: { event: true, createdAt: true },
+            },
             items: {
               include: {
                 product: { select: { sku: true, name: true } },
@@ -2102,8 +2115,19 @@ export async function webRoutes(app: FastifyInstance) {
         }),
         prisma.order.count({ where }),
       ]);
+      const { activeDispatchDurationMs, formatDuration, msToSeconds } =
+        await import("../services/operation-duration.js");
       return {
-        orders,
+        orders: orders.map(({ timeLogs, ...order }) => {
+          const elapsedMs = activeDispatchDurationMs(timeLogs);
+          const elapsedSec = msToSeconds(elapsedMs);
+          return {
+            ...order,
+            dispatchElapsedSec: elapsedSec > 0 ? elapsedSec : null,
+            dispatchElapsedLabel:
+              elapsedSec > 0 ? formatDuration(elapsedSec) : null,
+          };
+        }),
         pagination: buildPaginationMeta(total, page, pageSize),
       };
     },
@@ -2148,6 +2172,16 @@ export async function webRoutes(app: FastifyInstance) {
           toStatus: next,
           userId,
         });
+        const {
+          ensureDispatchStartLog,
+          ensureDispatchEndLog,
+        } = await import("../services/order-time-log-helpers.js");
+        if (next === OrderStatus.DISPATCHING) {
+          await ensureDispatchStartLog(tx, order.id, userId);
+        }
+        if (next === OrderStatus.DISPATCHED) {
+          await ensureDispatchEndLog(tx, order.id, userId);
+        }
         return row;
       });
 
@@ -2298,8 +2332,9 @@ export async function webRoutes(app: FastifyInstance) {
         id: "volume_by_marketplace",
         label: "Volume por marketplace",
         description:
-          "Pedidos, expedidos e incidentes de packing agrupados por marketplace",
+          "Pedidos, expedidos, % do total e incidentes de packing agrupados por marketplace — exporte em Excel/PDF",
         requiresPeriod: true,
+        group: "operational",
       },
       {
         id: "low_stock",

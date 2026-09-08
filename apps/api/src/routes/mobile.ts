@@ -170,7 +170,7 @@ export async function mobileRoutes(app: FastifyInstance) {
                       : "Problema";
             summary = `${parsed.sku ?? ""} · ${typeLabel} · ${parsed.quantity ?? 0} un.`;
           } catch {
-            summary = "Retorno do packing";
+            summary = "Retorno para separação";
           }
         }
         lastIssueByOrder.set(log.orderId, summary);
@@ -334,19 +334,16 @@ export async function mobileRoutes(app: FastifyInstance) {
         throw e;
       }
 
-      await prisma.$transaction([
-        prisma.order.update({
+      const { ensurePickingStartLog } = await import(
+        "../services/order-time-log-helpers.js"
+      );
+      await prisma.$transaction(async (tx) => {
+        await tx.order.update({
           where: { id: orderId },
           data: { basketId: basket.id },
-        }),
-        prisma.orderTimeLog.create({
-          data: {
-            orderId,
-            userId,
-            event: OrderTimeLogEvent.START,
-          },
-        }),
-      ]);
+        });
+        await ensurePickingStartLog(tx, orderId, userId);
+      });
 
       return { basketId: basket.id, basketCode: basket.code };
     }

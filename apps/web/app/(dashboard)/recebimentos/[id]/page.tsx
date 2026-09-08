@@ -302,8 +302,8 @@ export default function PurchaseReceiptDetailPage() {
                           <ProductImageZoom
                             src={item.imageUrl}
                             alt={item.description ?? item.sku ?? ""}
-                            className="relative h-12 w-12 shrink-0 overflow-visible"
-                            sizes="48px"
+                            className="relative h-24 w-24 shrink-0 overflow-visible sm:h-32 sm:w-32"
+                            sizes="128px"
                           />
                         </TableCell>
                         <TableCell className="max-w-[200px]">

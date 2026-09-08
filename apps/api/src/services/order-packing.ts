@@ -475,6 +475,10 @@ export async function completePacking(orderId: string, userId: string) {
     await tx.orderTimeLog.create({
       data: { orderId, userId, event: OrderTimeLogEvent.PACK_END },
     });
+    const { ensureDispatchStartLog } = await import(
+      "./order-time-log-helpers.js"
+    );
+    await ensureDispatchStartLog(tx, orderId, userId);
   });
 
   const order = await prisma.order.findUnique({ where: { id: orderId } });

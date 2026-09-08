@@ -17,7 +17,7 @@ export function PackingReturnsTable({ data }: PackingReturnsTableProps) {
   return (
     <Card className="shadow-md">
       <CardHeader>
-        <CardTitle>Devoluções para conferência</CardTitle>
+        <CardTitle>Devoluções do packing para separação</CardTitle>
         <CardDescription>
           Quem separou, motivo reportado no packing e operador da conferência
         </CardDescription>

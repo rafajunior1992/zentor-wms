@@ -6,7 +6,7 @@ export const ORDER_STATUS_LABEL: Record<OrderStatusType, string> = {
   [OrderStatus.PICKING]: "Em separação",
   [OrderStatus.PAUSED_ISSUE]: "Pausado (problema)",
   [OrderStatus.PICKED_AWAITING_CONFERENCE]: "Aguardando conferência",
-  [OrderStatus.PACKING_RETURNED_TO_PICKING]: "Retorno do packing",
+  [OrderStatus.PACKING_RETURNED_TO_PICKING]: "Retorno para separação",
   [OrderStatus.DISPATCHING]: "Pronto para expedir",
   [OrderStatus.DISPATCHED]: "Expedido",
 };

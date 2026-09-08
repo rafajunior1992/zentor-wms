@@ -1,7 +1,10 @@
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { recordOrderStageChange } from "./order-stage-log.js";
-import { ensureResumeAfterPause } from "./order-time-log-helpers.js";
+import {
+  ensurePickingStartLog,
+  ensureResumeAfterPause,
+} from "./order-time-log-helpers.js";
 
 const ACCEPTABLE_STATUSES: OrderStatus[] = [
   OrderStatus.PENDING,
@@ -89,6 +92,8 @@ async function tryAcceptOneOrder(
 
     if (fromStatus === OrderStatus.PAUSED_ISSUE) {
       await ensureResumeAfterPause(tx, orderId, userId);
+    } else {
+      await ensurePickingStartLog(tx, orderId, userId);
     }
 
     return true;

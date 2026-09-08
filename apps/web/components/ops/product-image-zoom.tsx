@@ -9,20 +9,20 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 
-const ZOOM_SCALE = 1.55;
+const ZOOM_SCALE = 2.2;
 const VIEWPORT_PADDING_PX = 8;
 
 type ProductImageZoomProps = {
   src: string | null | undefined;
   alt: string;
-  /** Classes do slot (ex.: aspect-square w-40 shrink-0) */
+  /** Classes do slot (ex.: aspect-square w-64 shrink-0) */
   className?: string;
   placeholder?: string;
   sizes?: string;
 };
 
-/** Amplia centralizado sobre o slot da miniatura (mesmo lugar na tela). */
 function computeZoomPopoverStyle(
   anchor: DOMRect,
   zoomSize: number,
@@ -55,13 +55,14 @@ function computeZoomPopoverStyle(
 export function ProductImageZoom({
   src,
   alt,
-  className = "relative aspect-square w-40 shrink-0",
+  className = "relative aspect-square w-64 shrink-0",
   placeholder,
-  sizes = "160px",
+  sizes = "256px",
 }: ProductImageZoomProps) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const zoomLayerRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
 
@@ -79,7 +80,7 @@ export function ProductImageZoom({
   }, []);
 
   useEffect(() => {
-    if (!hovered || !src) return;
+    if (!hovered || !src || lightbox) return;
     syncPopoverPosition();
     window.addEventListener("scroll", syncPopoverPosition, true);
     window.addEventListener("resize", syncPopoverPosition);
@@ -87,9 +88,18 @@ export function ProductImageZoom({
       window.removeEventListener("scroll", syncPopoverPosition, true);
       window.removeEventListener("resize", syncPopoverPosition);
     };
-  }, [hovered, src, syncPopoverPosition]);
+  }, [hovered, src, lightbox, syncPopoverPosition]);
 
-  const showPopover = mounted && hovered && src && popoverStyle;
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
+
+  const showPopover = mounted && hovered && src && popoverStyle && !lightbox;
 
   const stayHovered = (relatedTarget: EventTarget | null) =>
     relatedTarget instanceof Node &&
@@ -100,7 +110,7 @@ export function ProductImageZoom({
     <>
       <div
         ref={anchorRef}
-        className={className}
+        className={`${className} ${src ? "cursor-zoom-in" : ""}`}
         onMouseEnter={() => {
           setHovered(true);
           syncPopoverPosition();
@@ -108,10 +118,22 @@ export function ProductImageZoom({
         onMouseLeave={(e) => {
           if (!stayHovered(e.relatedTarget)) setHovered(false);
         }}
+        onClick={() => {
+          if (src) setLightbox(true);
+        }}
+        onKeyDown={(e) => {
+          if (src && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            setLightbox(true);
+          }
+        }}
+        role={src ? "button" : undefined}
+        tabIndex={src ? 0 : undefined}
+        aria-label={src ? `Ampliar imagem de ${alt}` : undefined}
       >
         <div
           className={`relative h-full w-full overflow-hidden rounded-md bg-slate-100 ${
-            hovered && src ? "invisible" : ""
+            hovered && src && !lightbox ? "invisible" : ""
           }`}
         >
           {src ? (
@@ -135,21 +157,54 @@ export function ProductImageZoom({
         ? createPortal(
             <div
               ref={zoomLayerRef}
-              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
+              className="pointer-events-none overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
               style={popoverStyle}
-              onMouseLeave={(e) => {
-                if (!stayHovered(e.relatedTarget)) setHovered(false);
-              }}
               role="presentation"
               aria-hidden
             >
-              <div className="pointer-events-none relative h-full w-full">
+              <div className="relative h-full w-full">
                 <Image
                   src={src}
                   alt=""
                   fill
                   className="object-contain p-1"
                   sizes={`${popoverStyle.width}px`}
+                  unoptimized
+                />
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {mounted && lightbox && src
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4"
+              onClick={() => setLightbox(false)}
+              role="dialog"
+              aria-modal
+              aria-label={alt}
+            >
+              <button
+                type="button"
+                className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-slate-900 shadow"
+                onClick={() => setLightbox(false)}
+                aria-label="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div
+                className="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-xl bg-white p-2 shadow-2xl"
+                style={{ width: "min(90vw, 720px)", height: "min(90vh, 720px)" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Image
+                  src={src}
+                  alt={alt}
+                  fill
+                  className="object-contain p-2"
+                  sizes="720px"
                   unoptimized
                 />
               </div>

@@ -125,7 +125,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   PICKING: "Em separação",
   PAUSED_ISSUE: "Pausado (problema)",
   PICKED_AWAITING_CONFERENCE: "Aguardando conferência",
-  PACKING_RETURNED_TO_PICKING: "Retorno do packing",
+  PACKING_RETURNED_TO_PICKING: "Retorno para separação",
   DISPATCHING: "Pronto para expedir",
   DISPATCHED: "Expedido",
 };
@@ -672,6 +672,10 @@ async function buildVolumeByMarketplaceReport(
   }
 
   const totalOrders = orders.length;
+  const totalDispatched = [...agg.values()].reduce(
+    (s, r) => s + r.dispatched,
+    0,
+  );
   const rows = [...agg.values()]
     .sort((a, b) => b.orders - a.orders)
     .map((r) => ({
@@ -681,6 +685,10 @@ async function buildVolumeByMarketplaceReport(
       pctDoTotal:
         totalOrders > 0
           ? `${Math.round((r.orders / totalOrders) * 1000) / 10}%`
+          : "0%",
+      pctExpedidos:
+        totalDispatched > 0
+          ? `${Math.round((r.dispatched / totalDispatched) * 1000) / 10}%`
           : "0%",
       incidentesPacking: r.issues,
     }));
@@ -694,7 +702,8 @@ async function buildVolumeByMarketplaceReport(
       { key: "marketplace", header: "Marketplace" },
       { key: "pedidosNoPeriodo", header: "Pedidos no período" },
       { key: "expedidos", header: "Expedidos" },
-      { key: "pctDoTotal", header: "% do total" },
+      { key: "pctDoTotal", header: "% pedidos" },
+      { key: "pctExpedidos", header: "% expedidos" },
       { key: "incidentesPacking", header: "Incidentes packing" },
     ],
     rows,

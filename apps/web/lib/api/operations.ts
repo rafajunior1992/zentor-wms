@@ -870,6 +870,8 @@ export function fetchShippingQueue(page?: number, pageSize?: number) {
         product: { sku: string; name: string };
       }>;
       updatedAt: string;
+      dispatchElapsedSec?: number | null;
+      dispatchElapsedLabel?: string | null;
     }>;
     pagination: PaginationMeta;
   }>(`/api/shipping/queue?${sp}`);

@@ -142,3 +142,65 @@ export async function ensureResumeAfterPause(
     data: { orderId, userId, event: OrderTimeLogEvent.RESUME },
   });
 }
+
+export async function ensureDispatchStartLog(
+  tx: Tx,
+  orderId: string,
+  userId: string,
+) {
+  const lastStart = await tx.orderTimeLog.findFirst({
+    where: { orderId, event: OrderTimeLogEvent.DISPATCH_START },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!lastStart) {
+    await tx.orderTimeLog.create({
+      data: { orderId, userId, event: OrderTimeLogEvent.DISPATCH_START },
+    });
+    return;
+  }
+  const endAfter = await tx.orderTimeLog.findFirst({
+    where: {
+      orderId,
+      event: OrderTimeLogEvent.DISPATCH_END,
+      createdAt: { gt: lastStart.createdAt },
+    },
+  });
+  if (endAfter) {
+    await tx.orderTimeLog.create({
+      data: { orderId, userId, event: OrderTimeLogEvent.DISPATCH_START },
+    });
+  }
+}
+
+export async function ensureDispatchEndLog(
+  tx: Tx,
+  orderId: string,
+  userId: string,
+) {
+  const lastStart = await tx.orderTimeLog.findFirst({
+    where: { orderId, event: OrderTimeLogEvent.DISPATCH_START },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!lastStart) {
+    await tx.orderTimeLog.create({
+      data: { orderId, userId, event: OrderTimeLogEvent.DISPATCH_START },
+    });
+    await tx.orderTimeLog.create({
+      data: { orderId, userId, event: OrderTimeLogEvent.DISPATCH_END },
+    });
+    return;
+  }
+
+  const endAfter = await tx.orderTimeLog.findFirst({
+    where: {
+      orderId,
+      event: OrderTimeLogEvent.DISPATCH_END,
+      createdAt: { gt: lastStart.createdAt },
+    },
+  });
+  if (endAfter) return;
+
+  await tx.orderTimeLog.create({
+    data: { orderId, userId, event: OrderTimeLogEvent.DISPATCH_END },
+  });
+}

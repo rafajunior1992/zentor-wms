@@ -76,6 +76,19 @@ export default function PickingHubScreen() {
 
   const handleOrderPress = async (order: QueueOrder | ProblemOrder) => {
     try {
+      try {
+        await api.acceptOrder(order.id);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 409) {
+          showErrorAlert(e.message);
+          void refetch();
+          void problemOrders.refetch();
+          return;
+        }
+        throw e;
+      }
+      void refetch();
+
       const session = await api.getPickingSession(order.id).catch(() => null);
       if (session?.order.basket) {
         router.push({
@@ -489,7 +502,7 @@ function OrderCard({
     >
       {returned ? (
         <View style={styles.returnBadge}>
-          <Text style={styles.returnBadgeText}>RETORNO PACKING</Text>
+          <Text style={styles.returnBadgeText}>RETORNO SEPARAÇÃO</Text>
         </View>
       ) : null}
       {resuming ? (
