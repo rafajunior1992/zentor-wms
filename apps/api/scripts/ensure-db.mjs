@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Garante schema Prisma no Postgres antes de subir a API.
- * Use em homolog (Dokploy): banco vazio → db push (+ seed se WMS_AUTO_SEED=1 ou banco sem tenants).
+ * Homolog (Dokploy):
+ * - banco vazio → seed completo
+ * - banco já populado → só recria pedidos QA-H-* (sem precisar de terminal)
  */
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -27,33 +29,33 @@ function run(cmd, args, opts = {}) {
 console.log("[ensure-db] aplicando schema (prisma db push)...");
 run("pnpm", ["exec", "prisma", "db", "push", "--skip-generate"]);
 
-const autoSeed =
-  process.env.WMS_AUTO_SEED === "1" ||
-  process.env.WMS_AUTO_SEED === "true";
-
-let shouldSeed = autoSeed;
-
-if (!shouldSeed) {
-  try {
-    const { PrismaClient } = require("@prisma/client");
-    const prisma = new PrismaClient();
-    const tenants = await prisma.tenant.count();
-    await prisma.$disconnect();
-    if (tenants === 0) {
-      console.log("[ensure-db] banco sem tenants — rodando seed automático");
-      shouldSeed = true;
-    }
-  } catch (err) {
-    console.warn(
-      "[ensure-db] não foi possível checar tenants; seed só se WMS_AUTO_SEED=1",
-      err instanceof Error ? err.message : err,
-    );
-  }
+let tenantCount = 0;
+try {
+  const { PrismaClient } = require("@prisma/client");
+  const prisma = new PrismaClient();
+  tenantCount = await prisma.tenant.count();
+  await prisma.$disconnect();
+} catch (err) {
+  console.warn(
+    "[ensure-db] não foi possível checar tenants:",
+    err instanceof Error ? err.message : err,
+  );
 }
 
-if (shouldSeed) {
-  console.log("[ensure-db] populando dados demo (db:seed)...");
+const forceFullSeed =
+  process.env.WMS_FORCE_FULL_SEED === "1" ||
+  process.env.WMS_FORCE_FULL_SEED === "true";
+
+if (tenantCount === 0 || forceFullSeed) {
+  console.log(
+    forceFullSeed
+      ? "[ensure-db] WMS_FORCE_FULL_SEED=1 — rodando seed completo..."
+      : "[ensure-db] banco sem tenants — rodando seed completo...",
+  );
   run("pnpm", ["run", "db:seed"]);
+} else {
+  console.log("[ensure-db] atualizando pedidos QA-H-*...");
+  run("pnpm", ["exec", "tsx", "prisma/seed-homolog-qa-run.ts"]);
 }
 
 console.log("[ensure-db] ok");

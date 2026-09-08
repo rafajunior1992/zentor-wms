@@ -63,9 +63,9 @@ export async function ensureDatabaseReady(): Promise<void> {
   console.log("[ensure-db] aplicando schema (prisma db push)...");
   runCli("prisma", ["db", "push", "--skip-generate", "--schema", schemaPath]);
 
-  const forceSeed =
-    process.env.WMS_AUTO_SEED === "1" ||
-    process.env.WMS_AUTO_SEED === "true";
+  const forceFullSeed =
+    process.env.WMS_FORCE_FULL_SEED === "1" ||
+    process.env.WMS_FORCE_FULL_SEED === "true";
 
   let tenantCount = 0;
   try {
@@ -77,13 +77,17 @@ export async function ensureDatabaseReady(): Promise<void> {
     );
   }
 
-  if (forceSeed || tenantCount === 0) {
+  if (tenantCount === 0 || forceFullSeed) {
     console.log(
-      forceSeed
-        ? "[ensure-db] WMS_AUTO_SEED=1 — rodando seed..."
-        : "[ensure-db] banco sem tenants — rodando seed...",
+      forceFullSeed
+        ? "[ensure-db] WMS_FORCE_FULL_SEED=1 — rodando seed completo..."
+        : "[ensure-db] banco sem tenants — rodando seed completo...",
     );
     runCli("tsx", ["prisma/seed.ts"]);
+  } else {
+    // Homolog com banco já populado: refresca só QA-H-* no boot (sem CLI no Dokploy)
+    console.log("[ensure-db] atualizando pedidos QA-H-*...");
+    runCli("tsx", ["prisma/seed-homolog-qa-run.ts"]);
   }
 
   console.log("[ensure-db] ok");
