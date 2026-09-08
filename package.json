@@ -9,6 +9,8 @@
     "dev:web": "pnpm --filter @wms/web dev",
     "dev:mobile": "pnpm --filter @wms/mobile dev",
     "dev:mobile:go": "pnpm --filter @wms/mobile dev:go",
+    "dev:mobile:homolog": "pnpm --filter @wms/mobile dev:homolog",
+    "dev:mobile:homolog:tunnel": "pnpm --filter @wms/mobile dev:homolog:tunnel",
     "build": "pnpm -r build",
     "db:generate": "pnpm --filter @wms/api db:generate",
     "db:migrate": "pnpm --filter @wms/api db:migrate",

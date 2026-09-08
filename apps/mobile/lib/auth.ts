@@ -32,7 +32,7 @@ export async function clearStoredToken(): Promise<void> {
 function networkLoginError(): Error {
   const base = getApiBaseUrl();
   return new Error(
-    `Não foi possível conectar à API (${base}). Rode pnpm dev:api no PC. No celular, crie apps/mobile/.env com EXPO_PUBLIC_API_URL=http://SEU_IP:3333`,
+    `Não foi possível conectar à API (${base}). Homolog: pnpm dev:mobile:homolog (ou :tunnel). Local: EXPO_PUBLIC_API_URL=http://SEU_IP:3333`,
   );
 }
 

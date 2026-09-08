@@ -7,11 +7,6 @@
     "scheme": "wms",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B0F14"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "br.com.zentor.wms",
@@ -39,10 +34,21 @@
           "cameraPermission": "Permitir acesso à câmera para leitura de códigos de barras."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B0F14",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCompiler": true
     },
     "extra": {
       "router": {},

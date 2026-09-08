@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   camera: { flex: 1 },
   reticle: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     margin: 48,
     borderWidth: 4,
     borderColor: theme.scannerOverlay,
