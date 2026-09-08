@@ -3,6 +3,10 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prisma } from "./prisma.js";
+import {
+  printHomologQaGuide,
+  runHomologQaSeedForDefaultTenant,
+} from "../services/homolog-qa-seed.js";
 
 /** apps/api — funciona a partir de dist/lib ou src/lib */
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -85,9 +89,17 @@ export async function ensureDatabaseReady(): Promise<void> {
     );
     runCli("tsx", ["prisma/seed.ts"]);
   } else {
-    // Homolog com banco já populado: refresca só QA-H-* no boot (sem CLI no Dokploy)
+    // Homolog com banco já populado: refresca só QA-H-* no boot (in-process)
     console.log("[ensure-db] atualizando pedidos QA-H-*...");
-    runCli("tsx", ["prisma/seed-homolog-qa-run.ts"]);
+    try {
+      const result = await runHomologQaSeedForDefaultTenant(prisma);
+      printHomologQaGuide(result);
+    } catch (err) {
+      console.warn(
+        "[ensure-db] falha ao atualizar QA-H-*:",
+        err instanceof Error ? err.message : err,
+      );
+    }
   }
 
   console.log("[ensure-db] ok");

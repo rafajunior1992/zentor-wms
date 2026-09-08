@@ -2,6 +2,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FastifyInstance } from "fastify";
+import {
+  printHomologQaGuide,
+  runHomologQaSeedForDefaultTenant,
+} from "../services/homolog-qa-seed.js";
 
 const FIXTURES_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -34,4 +38,23 @@ export async function demoLabelRoutes(app: FastifyInstance) {
       }
     },
   );
+
+  /**
+   * Homolog / QA: recria pedidos PENDING QA-H-* sem acesso ao shell do Dokploy.
+   * POST https://<api>/demo/seed-homolog-qa
+   */
+  app.post("/demo/seed-homolog-qa", async (_request, reply) => {
+    try {
+      const result = await runHomologQaSeedForDefaultTenant();
+      printHomologQaGuide(result);
+      return {
+        ok: true,
+        pendingCount: result.pendingCount,
+        pendingIds: result.pendingIds,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return reply.status(500).send({ ok: false, error: message });
+    }
+  });
 }
