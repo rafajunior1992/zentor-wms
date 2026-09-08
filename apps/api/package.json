@@ -15,6 +15,7 @@
     "db:studio": "prisma studio",
     "preseed": "pnpm --filter @wms/shared build",
     "db:seed": "tsx prisma/seed.ts",
+    "seed:homolog-qa": "tsx --env-file .env prisma/seed-homolog-qa-run.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test src/services/order-proximity.test.ts src/services/pick-wave-partition.test.ts src/services/tiny-order-priority.test.ts src/services/tiny-integration.test.ts src/services/tiny-sales-order-sync.test.ts src/services/tiny-product-sync.test.ts src/services/tiny-sync-checkpoint.test.ts src/services/tiny-rate-limit.test.ts src/services/demo-tenant-cleanup.test.ts src/services/tiny-oauth.test.ts",
     "tiny:fetch-products": "tsx scripts/fetch-tiny-products.ts",

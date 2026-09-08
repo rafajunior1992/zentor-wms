@@ -21,6 +21,10 @@ import {
   seedFlowStages,
 } from "./seed-flow-stages.js";
 import {
+  printHomologQaGuide,
+  seedHomologQaBatch,
+} from "./seed-homolog-qa.js";
+import {
   printWarehouseDemoGuide,
   seedWarehouseDemo,
 } from "./seed-warehouse-demo.js";
@@ -427,6 +431,16 @@ async function main() {
     basketId: basket1.id,
   });
 
+  const homologQa = await seedHomologQaBatch(prisma, {
+    tenantId: TENANT_ID,
+    products: products.map((p) => ({ id: p.id, sku: p.sku, name: p.name })),
+    pickFaces: pickFaces.map((l) => ({
+      id: l.id,
+      barcode: l.barcode,
+      productId: l.productId,
+    })),
+  });
+
   for (const config of DEMO_TENANT_CONFIGS) {
     await seedDemoTenant(prisma, config);
   }
@@ -461,6 +475,7 @@ async function main() {
   console.log("  Layout: Gestão Barracão → BAURU (giro + pulmão)\n");
   printWarehouseDemoGuide(warehouse);
   printFlowStagesGuide(flowStages);
+  printHomologQaGuide(homologQa);
   printTestUsersGuide();
 }
 
