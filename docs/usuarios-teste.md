@@ -22,15 +22,17 @@ Este usuário gerencia o WMS a nível de infraestrutura/provedor. Ele não possu
 
 ## 🏢 Tenant `default` (Empresa de Demonstração Principal)
 
-Contém dados de movimentação completos, dezenas de pedidos integrados (prefixo `ERP-DEMO-*` e `ERP-10042`) e alertas de gôndola.
+Contém dados de movimentação completos, dezenas de pedidos integrados (prefixo `ERP-DEMO-*`, `QA-H-*` e `ERP-10042`) e alertas de gôndola.
 
-| E-mail | Senha | Papel | Web Dashboard | App Mobile |
-| :--- | :--- | :--- | :--- | :--- |
-| `operador@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não |
-| `operador2@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não |
-| `picker@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim |
-| `maria@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim |
-| `carlos@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim |
+| E-mail | Senha | Papel | Web Dashboard | App Mobile | Descrição / Permissões |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `adm@wms.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim | **Acesso total à conta:** Dashboard, Pedidos, Estoque, Usuários e Permissões (`/admin/usuarios`), Configurações (`/admin/configuracoes`) e Relatórios. |
+| `admin@default.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim | Alias do admin da conta para compatibilidade com o padrão multi-tenant. |
+| `operador@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não | Operação do CD: Pedidos, Packing, Estoque e Recebimento (sem gerenciar usuários ou configurações globais). |
+| `operador2@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não | Expedidor operacional secundário. |
+| `picker@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim | Operação no coletor móvel: fila de picking e separação em gôndola. |
+| `maria@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim | Separadora móvel. |
+| `carlos@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim | Separador móvel. |
 
 ---
 
@@ -81,5 +83,11 @@ Para testar a segurança e integridade do sistema localmente, realize os seguint
 ### 3. Acesso Mobile por Papel
 1.  Tente logar no aplicativo mobile com `operador@wms.local`. Como o seu papel padrão é `EXPEDITER` e por padrão não possui acesso móvel ativo no seed, o login deve ser negado.
 2.  Logue com `picker@wms.local`. O acesso será liberado exibindo as filas de separação de gôndola ativas.
+
+### 4. Gestão de Usuários e Configurações pelo Admin da Conta
+1.  Logue com `adm@wms.local` (senha `admin123`) no painel web.
+2.  O menu lateral exibirá a seção **Admin** com **Relatórios**, **Usuários e permissões** (`/admin/usuarios`) e **Configurações** (`/admin/configuracoes`).
+3.  Em `/admin/usuarios`, o administrador pode criar novos colaboradores, ativar/desativar funcionários e conceder ou revogar permissões granulares (como acesso web e móvel).
+4.  Em `/admin/configuracoes`, o administrador pode ajustar parâmetros globais (nome da empresa, parâmetros de onda, etc.).
 
 Para entender a lista completa de ações que cada papel pode exercer, acesse o guia de [[arquitetura-e-seguranca|Arquitetura e Segurança]].

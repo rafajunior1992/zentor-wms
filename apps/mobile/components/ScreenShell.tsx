@@ -53,7 +53,7 @@ export function ScreenShell({
       {scroll ? (
         <ScrollView
           contentContainerStyle={[styles.scrollContent, style]}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           showsVerticalScrollIndicator
           {...rest}
         >

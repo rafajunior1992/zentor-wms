@@ -73,7 +73,7 @@ export async function login(
   return body.user;
 }
 
-export function authHeaders(): HeadersInit {
+export function authHeaders(): Record<string, string> {
   const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

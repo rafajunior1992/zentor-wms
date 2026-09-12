@@ -10,6 +10,8 @@ import {
 import { FactoryButton } from "@/components/FactoryButton";
 import { ScreenShell } from "@/components/ScreenShell";
 import { usePutawayQueue, useStartPutaway } from "@/hooks/usePutaway";
+import { ApiError } from "@/lib/api";
+import { showErrorAlert } from "@/lib/app-alert";
 import { theme, spacing, typography } from "@/lib/theme";
 
 export default function PutawayListScreen() {
@@ -20,12 +22,18 @@ export default function PutawayListScreen() {
     purchaseReceiptId: string,
     putawaySessionId: string | null,
   ) => {
-    if (putawaySessionId) {
-      router.push(`/putaway/${putawaySessionId}`);
-      return;
+    try {
+      if (putawaySessionId) {
+        router.push(`/putaway/${putawaySessionId}`);
+        return;
+      }
+      const session = await start.mutateAsync(purchaseReceiptId);
+      router.push(`/putaway/${session.session.id}`);
+    } catch (e) {
+      showErrorAlert(
+        e instanceof ApiError ? e.message : "Erro ao iniciar armazenagem",
+      );
     }
-    const session = await start.mutateAsync(purchaseReceiptId);
-    router.push(`/putaway/${session.session.id}`);
   };
 
   return (

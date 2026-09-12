@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prisma } from "./prisma.js";
+import { ensureDefaultUsers } from "../services/ensure-default-users.js";
 import {
   printHomologQaGuide,
   runHomologQaSeedForDefaultTenant,
@@ -77,6 +78,19 @@ export async function ensureDatabaseReady(): Promise<void> {
   } catch (err) {
     console.warn(
       "[ensure-db] falha ao contar tenants após push:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  console.log("[ensure-db] garantindo usuários padrão (super-admin, adm da conta, operador)...");
+  try {
+    const defaultUsers = await ensureDefaultUsers(prisma);
+    console.log(
+      `[ensure-db] usuários prontos: platform=${defaultUsers.platformAdminEmail}, tenantAdmin=${defaultUsers.tenantAdminEmail}, operador=${defaultUsers.operadorEmail}`,
+    );
+  } catch (err) {
+    console.warn(
+      "[ensure-db] falha ao garantir usuários padrão:",
       err instanceof Error ? err.message : err,
     );
   }

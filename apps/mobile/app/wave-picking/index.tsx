@@ -16,6 +16,8 @@ import {
   useWaveById,
 } from "@/hooks/useWavePicking";
 import type { WaveLineSummary } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { showErrorAlert, showInfoAlert } from "@/lib/app-alert";
 import { theme, spacing, typography } from "@/lib/theme";
 
 function statusLabel(line: WaveLineSummary) {
@@ -157,7 +159,13 @@ export default function WavePickingListScreen() {
         </Text>
         <FactoryButton
           label="Aceitar esta onda"
-          onPress={() => acceptWave.mutate()}
+          onPress={() => {
+            void acceptWave.mutateAsync().catch((e) => {
+              showErrorAlert(
+                e instanceof ApiError ? e.message : "Erro ao aceitar onda",
+              );
+            });
+          }}
           loading={acceptWave.isPending}
         />
         <FactoryButton
@@ -215,54 +223,60 @@ export default function WavePickingListScreen() {
         contentContainerStyle={styles.list}
         refreshing={isRefetching}
         onRefresh={refetch}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[
-              styles.card,
-              item.sortStatus === "SORTED" && styles.cardDone,
-            ]}
-            onPress={() => {
-              if (item.sortStatus === "PICKED") {
-                return;
-              }
-              router.push({
-                pathname: "/wave-picking/[lineId]/pick",
-                params: { lineId: item.id },
-              });
-            }}
-          >
-            <View style={styles.cardTop}>
-              <Text style={styles.sku}>{item.product.sku}</Text>
-              <Text style={styles.badge}>{statusLabel(item)}</Text>
-            </View>
-            <CollectionDeadlineRow
-              deadline={item.collectionDeadline}
-              compact
-            />
-            <Text style={styles.productName} numberOfLines={2}>
-              {item.product.name}
-            </Text>
-            <Text style={styles.location}>{item.pickLocation.label}</Text>
-            {item.gondolaHint ? (
-              <Text style={styles.gondolaHint}>{item.gondolaHint}</Text>
-            ) : null}
-            <View style={styles.qtyRow}>
-              <Text style={styles.qtyMain}>
-                {item.quantityPicked} / {item.quantityTotal} un.
+        renderItem={({ item }) => {
+          const done =
+            item.sortStatus === "PICKED" || item.sortStatus === "SORTED";
+          return (
+            <Pressable
+              style={[styles.card, done && styles.cardDone]}
+              onPress={() => {
+                if (done) {
+                  showInfoAlert(
+                    item.sortStatus === "PICKED"
+                      ? "Pick concluído — finalize o packing no painel web."
+                      : "Linha já concluída.",
+                  );
+                  return;
+                }
+                router.push({
+                  pathname: "/wave-picking/[lineId]/pick",
+                  params: { lineId: item.id },
+                });
+              }}
+            >
+              <View style={styles.cardTop}>
+                <Text style={styles.sku}>{item.product.sku}</Text>
+                <Text style={styles.badge}>{statusLabel(item)}</Text>
+              </View>
+              <CollectionDeadlineRow
+                deadline={item.collectionDeadline}
+                compact
+              />
+              <Text style={styles.productName} numberOfLines={2}>
+                {item.product.name}
               </Text>
-              <Text style={styles.orders}>{item.ordersCount} pedido(s)</Text>
-            </View>
-            {item.remaining > 0 ? (
-              <Text style={styles.remaining}>
-                Faltam {item.remaining} un. na gôndola
-              </Text>
-            ) : item.sortStatus === "PICKED" ? (
-              <Text style={styles.hint}>
-                Pick concluído — finalize o packing no painel web
-              </Text>
-            ) : null}
-          </Pressable>
-        )}
+              <Text style={styles.location}>{item.pickLocation.label}</Text>
+              {item.gondolaHint ? (
+                <Text style={styles.gondolaHint}>{item.gondolaHint}</Text>
+              ) : null}
+              <View style={styles.qtyRow}>
+                <Text style={styles.qtyMain}>
+                  {item.quantityPicked} / {item.quantityTotal} un.
+                </Text>
+                <Text style={styles.orders}>{item.ordersCount} pedido(s)</Text>
+              </View>
+              {item.remaining > 0 ? (
+                <Text style={styles.remaining}>
+                  Faltam {item.remaining} un. na gôndola
+                </Text>
+              ) : item.sortStatus === "PICKED" ? (
+                <Text style={styles.hint}>
+                  Pick concluído — finalize o packing no painel web
+                </Text>
+              ) : null}
+            </Pressable>
+          );
+        }}
       />
 
       <FactoryButton

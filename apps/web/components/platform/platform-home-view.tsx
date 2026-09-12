@@ -26,6 +26,7 @@ export function PlatformHomeView() {
         <p className="mt-2">
           Essas operações pertencem a cada cliente. Para testar pedidos e ondas,
           faça login com o admin do tenant (ex.:{" "}
+          <code className="rounded bg-amber-100 px-1">adm@wms.local</code> ou{" "}
           <code className="rounded bg-amber-100 px-1">admin@loja-a.local</code>
           ). Consulte{" "}
           <code className="rounded bg-amber-100 px-1">docs/usuarios-teste.md</code>{" "}

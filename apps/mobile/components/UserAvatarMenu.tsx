@@ -35,7 +35,12 @@ export function UserAvatarMenu() {
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade">
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+        <View style={styles.backdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setOpen(false)}
+            accessibilityLabel="Fechar menu"
+          />
           <View style={styles.menu}>
             <Text style={styles.name}>{user.name}</Text>
             <Text style={styles.email}>{user.email}</Text>
@@ -50,16 +55,15 @@ export function UserAvatarMenu() {
             </Pressable>
             <Pressable
               style={[styles.item, styles.itemDanger]}
-              onPress={async () => {
+              onPress={() => {
                 setOpen(false);
-                await logout();
-                router.replace("/login");
+                void logout().then(() => router.replace("/login"));
               }}
             >
               <Text style={styles.itemDangerText}>Sair</Text>
             </Pressable>
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </>
   );

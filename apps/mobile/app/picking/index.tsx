@@ -205,7 +205,30 @@ function OrdersQueuePanel({
   const handleAcceptBatch = async (group: ProximityGroupDto) => {
     const firstId = group.orderIds[0];
     if (!firstId) return;
-    router.push(`/picking/${firstId}/basket`);
+    const order = orders.find((o) => o.id === firstId);
+    if (order) {
+      await onPressOrder(order);
+      return;
+    }
+    try {
+      await api.acceptOrder(firstId);
+      const session = await api.getPickingSession(firstId).catch(() => null);
+      if (session?.order.basket) {
+        router.push({
+          pathname: "/picking/[orderId]/pick",
+          params: {
+            orderId: firstId,
+            basketCode: session.order.basket.code,
+          },
+        });
+        return;
+      }
+      router.push(`/picking/${firstId}/basket`);
+    } catch (e) {
+      showErrorAlert(
+        e instanceof ApiError ? e.message : "Erro ao abrir pedido",
+      );
+    }
   };
 
   const runCreateWave = async (

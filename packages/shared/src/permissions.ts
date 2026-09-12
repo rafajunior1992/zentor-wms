@@ -134,13 +134,17 @@ export function canAccessWeb(user: {
   return hasPermission(user, Permission.WEB_ACCESS);
 }
 
-const MOBILE_ROLES = new Set(["PICKER", "REPLENISHER", "EXPEDITER"]);
+const MOBILE_ROLES = new Set(["PICKER", "REPLENISHER"]);
 
 export function canAccessMobile(user: {
   role: string;
   permissions: string[];
+  isPlatformAdmin?: boolean;
 }): boolean {
+  if (user.isPlatformAdmin) return false;
   if (user.role === "ADMIN") return true;
-  if (hasPermission(user, Permission.MOBILE_ACCESS)) return true;
+  if (user.permissions && user.permissions.length > 0) {
+    return user.permissions.includes(Permission.MOBILE_ACCESS);
+  }
   return MOBILE_ROLES.has(user.role);
 }

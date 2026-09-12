@@ -13,6 +13,7 @@ import {
   markNotificationRead,
   type NotificationDto,
 } from "@/lib/notifications-api";
+import { showErrorAlert } from "@/lib/app-alert";
 import { theme, spacing, typography } from "@/lib/theme";
 
 export default function NotificationsScreen() {
@@ -24,8 +25,11 @@ export default function NotificationsScreen() {
     try {
       const data = await fetchNotifications(1);
       setItems(data.notifications);
-    } catch {
+    } catch (e) {
       setItems([]);
+      showErrorAlert(
+        e instanceof Error ? e.message : "Erro ao carregar notificações",
+      );
     } finally {
       setLoading(false);
     }
@@ -47,7 +51,18 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Notificações</Text>
-        <Pressable onPress={async () => { await markAllNotificationsRead(); await load(); }}>
+        <Pressable
+          onPress={async () => {
+            try {
+              await markAllNotificationsRead();
+              await load();
+            } catch (e) {
+              showErrorAlert(
+                e instanceof Error ? e.message : "Erro ao marcar como lidas",
+              );
+            }
+          }}
+        >
           <Text style={styles.markAll}>Marcar todas lidas</Text>
         </Pressable>
       </View>
@@ -60,10 +75,16 @@ export default function NotificationsScreen() {
         renderItem={({ item }) => (
           <Pressable
             style={[styles.item, !item.readAt && styles.unread]}
+            disabled={Boolean(item.readAt)}
             onPress={async () => {
-              if (!item.readAt) {
+              if (item.readAt) return;
+              try {
                 await markNotificationRead(item.id);
                 await load();
+              } catch (e) {
+                showErrorAlert(
+                  e instanceof Error ? e.message : "Erro ao marcar como lida",
+                );
               }
             }}
           >
