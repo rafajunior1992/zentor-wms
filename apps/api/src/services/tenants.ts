@@ -33,6 +33,7 @@ export async function listTenants(opts?: { q?: string; page?: number; pageSize?:
         OR: [
           { name: { contains: opts.q, mode: "insensitive" } },
           { slug: { contains: opts.q, mode: "insensitive" } },
+          { cnpj: { contains: opts.q, mode: "insensitive" } },
         ],
       }
     : {};
@@ -48,7 +49,7 @@ export async function listTenants(opts?: { q?: string; page?: number; pageSize?:
         tinyConnections: {
           where: { isDefault: true, deletedAt: null },
           take: 1,
-          select: { status: true, companyName: true },
+          select: { status: true, companyName: true, metadata: true },
         },
       },
     }),
@@ -56,24 +57,29 @@ export async function listTenants(opts?: { q?: string; page?: number; pageSize?:
   ]);
 
   return {
-    tenants: tenants.map((t) => ({
-      id: t.id,
-      name: t.name,
-      slug: t.slug,
-      active: t.active,
-      userCount: t._count.users,
-      orderCount: t._count.orders,
-      tinyStatus: t.tinyConnections[0]?.status ?? null,
-      tinyCompanyName: t.tinyConnections[0]?.companyName ?? null,
-      createdAt: t.createdAt.toISOString(),
-    })),
+    tenants: tenants.map((t) => {
+      const meta = t.tinyConnections[0]?.metadata as { cnpj?: string } | null;
+      const effectiveCnpj = t.cnpj || meta?.cnpj || null;
+      return {
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        cnpj: effectiveCnpj,
+        active: t.active,
+        userCount: t._count.users,
+        orderCount: t._count.orders,
+        tinyStatus: t.tinyConnections[0]?.status ?? null,
+        tinyCompanyName: t.tinyConnections[0]?.companyName ?? null,
+        createdAt: t.createdAt.toISOString(),
+      };
+    }),
     total,
     page,
     pageSize,
   };
 }
 
-export async function createTenant(params: { name: string; slug?: string }) {
+export async function createTenant(params: { name: string; slug?: string; cnpj?: string }) {
   const name = params.name.trim();
   if (!name) throw new TenantServiceError("Nome do cliente é obrigatório");
 
@@ -85,7 +91,12 @@ export async function createTenant(params: { name: string; slug?: string }) {
 
   const tenant = await prisma.$transaction(async (tx) => {
     const t = await tx.tenant.create({
-      data: { name, slug, active: true },
+      data: {
+        name,
+        slug,
+        cnpj: params.cnpj?.trim() || null,
+        active: true,
+      },
     });
     return t;
   });
@@ -95,7 +106,7 @@ export async function createTenant(params: { name: string; slug?: string }) {
 
 export async function updateTenant(
   id: string,
-  data: { name?: string; active?: boolean },
+  data: { name?: string; active?: boolean; cnpj?: string },
 ) {
   const tenant = await prisma.tenant.findUnique({ where: { id } });
   if (!tenant) throw new TenantServiceError("Cliente não encontrado", 404);
@@ -105,6 +116,7 @@ export async function updateTenant(
     data: {
       ...(data.name?.trim() ? { name: data.name.trim() } : {}),
       ...(typeof data.active === "boolean" ? { active: data.active } : {}),
+      ...(typeof data.cnpj === "string" ? { cnpj: data.cnpj.trim() || null } : {}),
     },
   });
 }
@@ -163,7 +175,7 @@ export async function createTenantAdminUser(
 export async function listTenantUsers(tenantId: string) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, cnpj: true },
   });
   if (!tenant) throw new TenantServiceError("Cliente não encontrado", 404);
 
@@ -181,7 +193,7 @@ export async function listTenantUsers(tenantId: string) {
   });
 
   return {
-    tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug },
+    tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug, cnpj: tenant.cnpj },
     users: users.map((u) => ({
       id: u.id,
       email: u.email,

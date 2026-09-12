@@ -27,8 +27,16 @@ export async function ensureDefaultUsers(
 ): Promise<EnsureDefaultUsersResult> {
   const defaultTenant = await client.tenant.upsert({
     where: { slug: "default" },
-    create: { name: "Default", slug: "default", active: true },
-    update: { active: true },
+    create: {
+      name: "Default",
+      slug: "default",
+      cnpj: "03.007.331/0001-41",
+      active: true,
+    },
+    update: {
+      active: true,
+      cnpj: "03.007.331/0001-41",
+    },
   });
   const TENANT_ID = defaultTenant.id;
 
@@ -105,15 +113,8 @@ export async function ensureDefaultUsers(
     },
   });
 
-  // 4. Operador / Expedidor da Conta
-  const felipePermissions = [
-    ...new Set([
-      ...defaultPermissionsForRole("EXPEDITER"),
-      Permission.REGISTERS_VIEW,
-      Permission.PRODUCTS_MANAGE,
-      Permission.REPORTS_VIEW,
-    ]),
-  ];
+  // 4. Operador / Expedidor da Conta (Apenas Telas Operacionais)
+  const operadorPermissions = defaultPermissionsForRole("EXPEDITER");
 
   const operador = await client.user.upsert({
     where: { email: "operador@wms.local" },
@@ -124,34 +125,33 @@ export async function ensureDefaultUsers(
       role: "EXPEDITER",
       tenantId: TENANT_ID,
       isPlatformAdmin: false,
-      permissions: felipePermissions,
+      permissions: operadorPermissions,
       active: true,
     },
     update: {
       password: hashPassword("operador123"),
       name: "Felipe Figueiredo",
+      role: "EXPEDITER",
       active: true,
       tenantId: TENANT_ID,
       isPlatformAdmin: false,
-      permissions: felipePermissions,
+      permissions: operadorPermissions,
     },
   });
 
-  // 5. Tiny connection padrão para os usuários se não existir
-  for (const user of [admConta, operador]) {
-    const existingTiny = await client.tinyConnection.findFirst({
-      where: { tenantId: TENANT_ID, userId: user.id, deletedAt: null },
+  // 5. Tiny connection padrão vinculada ao Admin da Conta
+  const existingTiny = await client.tinyConnection.findFirst({
+    where: { tenantId: TENANT_ID, userId: admConta.id, deletedAt: null },
+  });
+  if (!existingTiny) {
+    await client.tinyConnection.create({
+      data: {
+        tenantId: TENANT_ID,
+        userId: admConta.id,
+        name: "Tiny ERP",
+        isDefault: true,
+      },
     });
-    if (!existingTiny) {
-      await client.tinyConnection.create({
-        data: {
-          tenantId: TENANT_ID,
-          userId: user.id,
-          name: "Tiny ERP",
-          isDefault: true,
-        },
-      });
-    }
   }
 
   return {

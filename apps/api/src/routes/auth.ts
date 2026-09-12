@@ -15,7 +15,7 @@ async function loadUserForAuth(email: string) {
   return prisma.user.findUnique({
     where: { email },
     include: {
-      tenant: { select: { id: true, name: true, slug: true, active: true } },
+      tenant: { select: { id: true, name: true, slug: true, cnpj: true, active: true } },
     },
   });
 }
@@ -137,7 +137,7 @@ export async function authRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUnique({
       where: { id: request.authUser!.id },
       include: {
-        tenant: { select: { id: true, name: true, slug: true } },
+        tenant: { select: { id: true, name: true, slug: true, cnpj: true } },
       },
     });
     if (!user) return { user: toPublicUser(request.authUser!) };

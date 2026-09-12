@@ -11,6 +11,7 @@ export type DemoTenantSeedConfig = {
   prefix: string;
   adminEmail: string;
   pickerEmail: string;
+  cnpj?: string;
 };
 
 export const DEMO_TENANT_CONFIGS: DemoTenantSeedConfig[] = [
@@ -20,6 +21,7 @@ export const DEMO_TENANT_CONFIGS: DemoTenantSeedConfig[] = [
     prefix: "LOJA-A",
     adminEmail: "admin@loja-a.local",
     pickerEmail: "picker@loja-a.local",
+    cnpj: "35.635.824/0001-12",
   },
   {
     slug: "demo-loja-b",
@@ -27,6 +29,7 @@ export const DEMO_TENANT_CONFIGS: DemoTenantSeedConfig[] = [
     prefix: "LOJA-B",
     adminEmail: "admin@loja-b.local",
     pickerEmail: "picker@loja-b.local",
+    cnpj: "15.436.940/0001-03",
   },
   {
     slug: "demo-loja-c",
@@ -34,6 +37,7 @@ export const DEMO_TENANT_CONFIGS: DemoTenantSeedConfig[] = [
     prefix: "LOJA-C",
     adminEmail: "admin@loja-c.local",
     pickerEmail: "picker@loja-c.local",
+    cnpj: "11.222.333/0001-44",
   },
 ];
 
@@ -43,8 +47,17 @@ export async function seedDemoTenant(
 ) {
   const tenant = await prisma.tenant.upsert({
     where: { slug: config.slug },
-    create: { name: config.name, slug: config.slug, active: true },
-    update: { name: config.name, active: true },
+    create: {
+      name: config.name,
+      slug: config.slug,
+      cnpj: config.cnpj ?? null,
+      active: true,
+    },
+    update: {
+      name: config.name,
+      cnpj: config.cnpj ?? null,
+      active: true,
+    },
   });
   const tenantId = tenant.id;
 

@@ -14,7 +14,7 @@ export function toPublicUser(
     isPlatformAdmin?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
-    tenant?: { id: string; name: string; slug: string } | null;
+    tenant?: { id: string; name: string; slug: string; cnpj?: string | null } | null;
   },
 ) {
   return {
@@ -28,7 +28,14 @@ export function toPublicUser(
     olistConfigured: Boolean(user.olistToken?.trim()),
     tenantId: user.tenantId ?? null,
     isPlatformAdmin: user.isPlatformAdmin ?? false,
-    tenant: user.tenant ?? null,
+    tenant: user.tenant
+      ? {
+          id: user.tenant.id,
+          name: user.tenant.name,
+          slug: user.tenant.slug,
+          cnpj: user.tenant.cnpj ?? null,
+        }
+      : null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

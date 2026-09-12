@@ -47,8 +47,13 @@ async function main() {
 
   const defaultTenant = await prisma.tenant.upsert({
     where: { slug: "default" },
-    create: { name: "Default", slug: "default", active: true },
-    update: { active: true },
+    create: {
+      name: "Default",
+      slug: "default",
+      cnpj: "03.007.331/0001-41",
+      active: true,
+    },
+    update: { active: true, cnpj: "03.007.331/0001-41" },
   });
   const TENANT_ID = defaultTenant.id;
 
@@ -122,14 +127,7 @@ async function main() {
     },
   });
 
-  const felipePermissions = [
-    ...new Set([
-      ...defaultPermissionsForRole("EXPEDITER"),
-      Permission.REGISTERS_VIEW,
-      Permission.PRODUCTS_MANAGE,
-      Permission.REPORTS_VIEW,
-    ]),
-  ];
+  const operadorPermissions = defaultPermissionsForRole("EXPEDITER");
 
   const operador = await prisma.user.upsert({
     where: { email: "operador@wms.local" },
@@ -140,32 +138,31 @@ async function main() {
       role: "EXPEDITER",
       tenantId: TENANT_ID,
       isPlatformAdmin: false,
-      permissions: felipePermissions,
+      permissions: operadorPermissions,
     },
     update: {
       password: hashPassword("operador123"),
       name: "Felipe Figueiredo",
+      role: "EXPEDITER",
       active: true,
       tenantId: TENANT_ID,
       isPlatformAdmin: false,
-      permissions: felipePermissions,
+      permissions: operadorPermissions,
     },
   });
 
-  for (const u of [admConta, operador]) {
-    const existing = await prisma.tinyConnection.findFirst({
-      where: { tenantId: TENANT_ID, userId: u.id, deletedAt: null },
+  const existingTiny = await prisma.tinyConnection.findFirst({
+    where: { tenantId: TENANT_ID, userId: admConta.id, deletedAt: null },
+  });
+  if (!existingTiny) {
+    await prisma.tinyConnection.create({
+      data: {
+        tenantId: TENANT_ID,
+        userId: admConta.id,
+        name: "Tiny ERP",
+        isDefault: true,
+      },
     });
-    if (!existing) {
-      await prisma.tinyConnection.create({
-        data: {
-          tenantId: TENANT_ID,
-          userId: u.id,
-          name: "Tiny ERP",
-          isDefault: true,
-        },
-      });
-    }
   }
 
   const operador2 = await prisma.user.upsert({
@@ -177,15 +174,16 @@ async function main() {
       role: "EXPEDITER",
       tenantId: TENANT_ID,
       isPlatformAdmin: false,
-      permissions: felipePermissions,
+      permissions: operadorPermissions,
     },
     update: {
       password: hashPassword("operador123"),
       name: "Ana Operadora",
+      role: "EXPEDITER",
       active: true,
       tenantId: TENANT_ID,
       isPlatformAdmin: false,
-      permissions: felipePermissions,
+      permissions: operadorPermissions,
     },
   });
 

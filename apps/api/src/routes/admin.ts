@@ -232,6 +232,18 @@ export async function adminRoutes(app: FastifyInstance) {
         ),
       );
 
+      const cnpjItem = items.find((i) => i.key === "company.cnpj");
+      const nameItem = items.find((i) => i.key === "company.name");
+      if (cnpjItem || nameItem) {
+        await prisma.tenant.update({
+          where: { id: tenantId },
+          data: {
+            ...(cnpjItem ? { cnpj: cnpjItem.value?.trim() || null } : {}),
+            ...(nameItem?.value?.trim() ? { name: nameItem.value.trim() } : {}),
+          },
+        });
+      }
+
       return { settings: updated };
     },
   );

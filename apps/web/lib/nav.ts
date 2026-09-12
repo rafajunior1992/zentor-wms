@@ -97,8 +97,14 @@ export const PLATFORM_ONLY_NAV: NavItem[] = [
   },
   {
     href: "/platform/tenants",
-    label: "Clientes",
+    label: "Clientes (Empresas)",
     icon: Building2,
+    permission: Permission.TENANTS_MANAGE,
+  },
+  {
+    href: "/platform/usuarios",
+    label: "Usuários do WMS",
+    icon: Users,
     permission: Permission.TENANTS_MANAGE,
   },
 ];
@@ -106,8 +112,14 @@ export const PLATFORM_ONLY_NAV: NavItem[] = [
 export const PLATFORM_NAV: NavItem[] = [
   {
     href: "/platform/tenants",
-    label: "Clientes",
+    label: "Clientes (Empresas)",
     icon: Building2,
+    permission: Permission.TENANTS_MANAGE,
+  },
+  {
+    href: "/platform/usuarios",
+    label: "Usuários do WMS",
+    icon: Users,
     permission: Permission.TENANTS_MANAGE,
   },
 ];

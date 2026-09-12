@@ -88,37 +88,49 @@ export async function tinyRoutes(app: FastifyInstance) {
       };
     });
 
-    secured.get("/api/integrations/tiny/connection", async (request, reply) => {
-      if (!request.authUser) {
-        return reply.status(401).send({ error: "Não autenticado" });
-      }
-      const tenantId = tenantWhere(request).tenantId;
-      const connectionId = (request.query as { connectionId?: string }).connectionId;
-      return getTinyConnectionStatus(
-        { tenantId, userId: request.authUser.id },
-        connectionId,
-      );
-    });
+    secured.get(
+      "/api/integrations/tiny/connection",
+      { preHandler: requireOlistConfigure },
+      async (request, reply) => {
+        if (!request.authUser) {
+          return reply.status(401).send({ error: "Não autenticado" });
+        }
+        const tenantId = tenantWhere(request).tenantId;
+        const connectionId = (request.query as { connectionId?: string }).connectionId;
+        return getTinyConnectionStatus(
+          { tenantId, userId: request.authUser.id },
+          connectionId,
+        );
+      },
+    );
 
-    secured.get("/api/integrations/tiny/sync-status", async (request, reply) => {
-      if (!request.authUser) {
-        return reply.status(401).send({ error: "Não autenticado" });
-      }
-      const tenantId = tenantWhere(request).tenantId;
-      const connectionId = (request.query as { connectionId?: string }).connectionId;
-      return getTinySyncStatus({ tenantId, connectionId });
-    });
+    secured.get(
+      "/api/integrations/tiny/sync-status",
+      { preHandler: requireOlistConfigure },
+      async (request, reply) => {
+        if (!request.authUser) {
+          return reply.status(401).send({ error: "Não autenticado" });
+        }
+        const tenantId = tenantWhere(request).tenantId;
+        const connectionId = (request.query as { connectionId?: string }).connectionId;
+        return getTinySyncStatus({ tenantId, connectionId });
+      },
+    );
 
-    secured.get("/api/integrations/tiny/connections", async (request, reply) => {
-      if (!request.authUser) {
-        return reply.status(401).send({ error: "Não autenticado" });
-      }
-      const connections = await listUserTinyConnections({
-        tenantId: tenantWhere(request).tenantId,
-        userId: request.authUser.id,
-      });
-      return { connections };
-    });
+    secured.get(
+      "/api/integrations/tiny/connections",
+      { preHandler: requireOlistConfigure },
+      async (request, reply) => {
+        if (!request.authUser) {
+          return reply.status(401).send({ error: "Não autenticado" });
+        }
+        const connections = await listUserTinyConnections({
+          tenantId: tenantWhere(request).tenantId,
+          userId: request.authUser.id,
+        });
+        return { connections };
+      },
+    );
 
     secured.get("/api/integrations/tiny/oauth/redirect-uri", async () => {
       return { redirectUri: defaultOAuthRedirectUri() };

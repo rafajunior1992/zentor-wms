@@ -9,12 +9,13 @@ type TenantRow = {
   id: string;
   name: string;
   slug: string;
+  cnpj?: string | null;
   active: boolean;
   userCount?: number;
   tinyStatus?: string | null;
 };
 
-type CreateTenantForm = { name: string; slug: string };
+type CreateTenantForm = { name: string; slug: string; cnpj: string };
 type AdminForm = {
   tenantId: string;
   tenantName: string;
@@ -71,6 +72,7 @@ export default function PlatformTenantsPage() {
         body: JSON.stringify({
           name: createForm.name.trim(),
           slug: createForm.slug.trim() || undefined,
+          cnpj: createForm.cnpj.trim() || undefined,
         }),
       });
       setCreateForm(null);
@@ -156,7 +158,7 @@ export default function PlatformTenantsPage() {
         </div>
         <button
           type="button"
-          onClick={() => setCreateForm({ name: "", slug: "" })}
+          onClick={() => setCreateForm({ name: "", slug: "", cnpj: "" })}
           className="inline-flex items-center gap-2 rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white"
         >
           <Plus className="h-4 w-4" />
@@ -180,6 +182,7 @@ export default function PlatformTenantsPage() {
             <thead className="bg-muted/50 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">Nome</th>
+                <th className="px-4 py-3 font-medium">CNPJ</th>
                 <th className="px-4 py-3 font-medium">Slug</th>
                 <th className="px-4 py-3 font-medium">Usuários</th>
                 <th className="px-4 py-3 font-medium">Status</th>
@@ -208,6 +211,9 @@ export default function PlatformTenantsPage() {
                           )}
                           {t.name}
                         </button>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {t.cnpj || "—"}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs">{t.slug}</td>
                       <td className="px-4 py-3">{t.userCount ?? 0}</td>
@@ -318,6 +324,17 @@ export default function PlatformTenantsPage() {
                     setCreateForm({ ...createForm, slug: e.target.value })
                   }
                   placeholder="loja-abc"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">CNPJ (opcional)</label>
+                <input
+                  className="mt-1 w-full rounded-lg border px-3 py-2 font-mono text-sm"
+                  value={createForm.cnpj}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, cnpj: e.target.value })
+                  }
+                  placeholder="00.000.000/0001-00"
                 />
               </div>
             </div>

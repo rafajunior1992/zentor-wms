@@ -10,59 +10,87 @@ pnpm --filter @wms/api prisma db seed
 
 ---
 
-## 👑 Administrador da Plataforma (Super-Admin)
+## 👑 Administrador da Plataforma (Admin WMS / Dono do WMS)
 
-Este usuário gerencia o WMS a nível de infraestrutura/provedor. Ele não possui vínculo com nenhum tenant de cliente.
+Este usuário é o **dono do sistema WMS** (provedor SaaS / infraestrutura). Ele não possui vínculo direto com nenhum tenant específico e possui visão e gestão global de todos os clientes e colaboradores.
 
-| E-mail | Senha | Papel | Acesso | Restrições |
+| E-mail | Senha | Papel | Acesso | Capacidades e Responsabilidades |
 | :--- | :--- | :--- | :--- | :--- |
-| `admin@wms.local` | `admin123` | Plataforma Admin | Apenas Painel Web | Bloqueado para operar pedidos/estoque e não acessa o Mobile. |
+| `admin@wms.local` | `admin123` | Plataforma Admin | Apenas Painel Web | **Dono do WMS:** Gerencia todos os clientes/empresas (`/platform/tenants`) e **todos os usuários do WMS** (`/platform/usuarios`), podendo cadastrar, editar, desativar ou redefinir senhas de qualquer usuário no sistema. Bloqueado para operar pedidos/estoque e não acessa o Mobile. |
 
 ---
 
 ## 🏢 Tenant `default` (Empresa de Demonstração Principal)
 
 Contém dados de movimentação completos, dezenas de pedidos integrados (prefixo `ERP-DEMO-*`, `QA-H-*` e `ERP-10042`) e alertas de gôndola.
+*CNPJ da Empresa:* `03.007.331/0001-41`
 
 | E-mail | Senha | Papel | Web Dashboard | App Mobile | Descrição / Permissões |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `adm@wms.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim | **Acesso total à conta:** Dashboard, Pedidos, Estoque, Usuários e Permissões (`/admin/usuarios`), Configurações (`/admin/configuracoes`) e Relatórios. |
+| `adm@wms.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim | **Dono da Conta (Contratante do WMS):** Responsável por conectar o Tiny ERP (`/integracoes/tiny`), gerenciar todos os colaboradores da sua empresa (`/admin/usuarios`), configurações (`/admin/configuracoes`), relatórios e operações do armazém. |
 | `admin@default.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim | Alias do admin da conta para compatibilidade com o padrão multi-tenant. |
-| `operador@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não | Operação do CD: Pedidos, Packing, Estoque e Recebimento (sem gerenciar usuários ou configurações globais). |
-| `operador2@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não | Expedidor operacional secundário. |
+| `operador@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não | **Operador (Acesso a Telas Específicas):** Acesso estritamente operacional: Dashboard, Cadastros, Layout do Galpão, Pedidos, Ondas, Recebimentos, Estoque e Packing. Não acessa integrações, configurações nem gestão de usuários. |
+| `operador2@wms.local` | `operador123` | Expedidor (`EXPEDITER`) | Sim | Não | Expedidor operacional secundário com acesso às mesmas telas operacionais. |
 | `picker@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim | Operação no coletor móvel: fila de picking e separação em gôndola. |
 | `maria@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim | Separadora móvel. |
 | `carlos@wms.local` | `dev` | Separador (`PICKER`) | Não | Sim | Separador móvel. |
 
 ---
 
-## 🏬 Tenants Isolados (Demonstração Multi-Loja)
+## 🏬 Tenants Isolados (Demonstração Multi-Empresa)
 
-Estes tenants simulam lojas menores rodando na mesma instalação WMS. Seus dados são totalmente isolados entre si e do tenant `default`.
+Estes tenants simulam empresas/lojas menores rodando na mesma instalação WMS. Seus dados e estoques são totalmente isolados entre si e do tenant `default`.
 
-### Loja Demo A (`demo-loja-a`)
+### Loja Demo A (`demo-loja-a`) — CNPJ: `35.635.824/0001-12`
 *   *Pedidos simulados*: `LOJA-A-001` até `LOJA-A-007`.
 
 | E-mail | Senha | Papel | Web Dashboard | App Mobile |
 | :--- | :--- | :--- | :--- | :--- |
-| `admin@loja-a.local` | `admin123` | Tenant Admin (`ADMIN`) | Sim | Sim |
+| `admin@loja-a.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim |
 | `picker@loja-a.local` | `dev` | Separador (`PICKER`) | Não | Sim |
 
-### Loja Demo B (`demo-loja-b`)
+### Loja Demo B (`demo-loja-b`) — CNPJ: `15.436.940/0001-03`
 *   *Pedidos simulados*: `LOJA-B-001` até `LOJA-B-007`.
 
 | E-mail | Senha | Papel | Web Dashboard | App Mobile |
 | :--- | :--- | :--- | :--- | :--- |
-| `admin@loja-b.local` | `admin123` | Tenant Admin (`ADMIN`) | Sim | Sim |
+| `admin@loja-b.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim |
 | `picker@loja-b.local` | `dev` | Separador (`PICKER`) | Não | Sim |
 
-### Loja Demo C (`demo-loja-c`)
+### Loja Demo C (`demo-loja-c`) — CNPJ: `11.222.333/0001-44`
 *   *Pedidos simulados*: `LOJA-C-001` até `LOJA-C-007`.
 
 | E-mail | Senha | Papel | Web Dashboard | App Mobile |
 | :--- | :--- | :--- | :--- | :--- |
-| `admin@loja-c.local` | `admin123` | Tenant Admin (`ADMIN`) | Sim | Sim |
+| `admin@loja-c.local` | `admin123` | Admin da Conta (`ADMIN`) | Sim | Sim |
 | `picker@loja-c.local` | `dev` | Separador (`PICKER`) | Não | Sim |
+
+---
+
+## 🔍 Regras e Hierarquia de Acesso (Pontos 5 a 8)
+
+### 5. Hierarquia do Operador
+* O operador não é dono da conta nem tem permissão de administrar o sistema.
+* Possui acesso apenas às telas operacionais do CD: **Dashboard**, **Cadastros**, **Layout do galpão**, **Pedidos**, **Ondas**, **Recebimentos**, **Estoque** e **Packing**.
+* Não visualiza e não tem acesso às rotas de **Configurações**, **Tiny ERP**, **Relatórios** e **Usuários e permissões**.
+
+### 6. Admin da Conta (Dono da Empresa Contratante)
+* É o usuário que contratou o WMS para a sua empresa (ex.: `adm@wms.local` para a empresa principal ou `admin@loja-a.local`).
+* É o único responsável por **conectar o Tiny ERP** (`/integracoes/tiny`) e **gerenciar todos os colaboradores da sua conta** (`/admin/usuarios`).
+* Pode cadastrar expedidores, separadores, ativar/desativar funcionários e controlar permissões de acesso web e mobile.
+
+### 7. Admin WMS (Dono do Sistema WMS)
+* É o super-administrador do SaaS Help Route WMS (`admin@wms.local`).
+* Gerencia **todas as empresas clientes (Tenants)** em `/platform/tenants`.
+* Gerencia **todos os usuários de todas as empresas do WMS** em `/platform/usuarios`, com busca, filtros por empresa e papel, edição cadastral, redefinição de senhas e troca de empresa.
+* Não opera armazém (não separa pedidos nem faz packing).
+
+### 8. Vínculo CNPJ e Múltipla Empresa
+* Cada **Tenant** representa uma empresa contratante e possui seu respectivo **CNPJ** vinculado no banco de dados.
+* O **Admin da Conta** e todos os seus colaboradores estão vinculados à empresa e ao seu CNPJ (`user.tenant.cnpj`).
+* O sistema suporta **múltipla empresa**:
+  * No nível do WMS: múltiplos Tenants isolados cadastrados pelo Admin WMS.
+  * No nível do Tiny ERP: uma empresa pode ter múltiplas conexões Tiny cadastradas (`tiny_connections`), cada uma representando uma filial ou conta ERP com seu respectivo CNPJ e razão social.
 
 ---
 

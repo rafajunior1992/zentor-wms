@@ -17,6 +17,11 @@ const DEFAULT_KEYS = [
     description: "Exibido no sistema",
   },
   {
+    key: "company.cnpj",
+    label: "CNPJ da empresa",
+    description: "Cadastro Nacional da Pessoa Jurídica (ex: 00.000.000/0001-00)",
+  },
+  {
     key: "warehouse.label",
     label: "Centro de distribuição",
     description: "Identificação do CD",

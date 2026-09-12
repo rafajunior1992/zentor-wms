@@ -5,6 +5,7 @@ export interface AuthTenant {
   id: string;
   name: string;
   slug: string;
+  cnpj?: string | null;
 }
 
 export interface AuthUser {

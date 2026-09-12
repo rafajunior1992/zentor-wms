@@ -220,16 +220,25 @@ export async function findUserTinyConnection(
       where: {
         id: connectionId,
         tenantId: scope.tenantId,
-        userId: scope.userId,
         deletedAt: null,
       },
     });
   }
 
-  return prisma.tinyConnection.findFirst({
+  const userConn = await prisma.tinyConnection.findFirst({
     where: {
       tenantId: scope.tenantId,
       userId: scope.userId,
+      deletedAt: null,
+      isActive: true,
+    },
+    orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }],
+  });
+  if (userConn) return userConn;
+
+  return prisma.tinyConnection.findFirst({
+    where: {
+      tenantId: scope.tenantId,
       deletedAt: null,
       isActive: true,
     },
@@ -706,7 +715,6 @@ export async function listUserTinyConnections(scope: TinyConnectionScope) {
   const connections = await prisma.tinyConnection.findMany({
     where: {
       tenantId: scope.tenantId,
-      userId: scope.userId,
       deletedAt: null,
     },
     orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }],
@@ -807,6 +815,13 @@ export async function testTinyConnection(
         status: TinyConnectionStatus.CONNECTED,
       },
     });
+
+    if (metadata.cnpj) {
+      await prisma.tenant.updateMany({
+        where: { id: scope.tenantId, cnpj: null },
+        data: { cnpj: metadata.cnpj },
+      });
+    }
 
     const updated = await prisma.tinyConnection.findUnique({ where: { id: conn.id } });
     return {

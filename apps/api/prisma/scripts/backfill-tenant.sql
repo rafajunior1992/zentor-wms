@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS "tenants" (
 
 CREATE UNIQUE INDEX IF NOT EXISTS "tenants_slug_key" ON "tenants"("slug");
 
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "cnpj" TEXT;
+
 INSERT INTO "tenants" ("id", "name", "slug", "active", "createdAt", "updatedAt")
 VALUES ('default-tenant', 'Default', 'default', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("slug") DO NOTHING;

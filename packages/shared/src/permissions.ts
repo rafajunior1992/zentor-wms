@@ -89,12 +89,11 @@ const ROLE_DEFAULTS: Record<UserRole, PermissionKey[]> = {
     Permission.WEB_ACCESS,
     Permission.DASHBOARD_VIEW,
     Permission.REGISTERS_VIEW,
+    Permission.PRODUCTS_MANAGE,
     Permission.SALES_VIEW,
     Permission.RECEIPTS_VIEW,
     Permission.STOCK_VIEW,
     Permission.SHIPPING_VIEW,
-    Permission.SYSTEM_VIEW,
-    Permission.OLIST_CONFIGURE,
     Permission.NOTIFICATIONS_VIEW,
   ],
   REPLENISHER: [
